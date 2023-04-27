@@ -1,1 +1,4 @@
-"Run pip install -r requirements.txt\n Then run python draw.py" 
+# Running
+Run pip install -r requirements.txt 
+
+Then run python draw.py

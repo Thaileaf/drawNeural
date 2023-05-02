@@ -8,19 +8,42 @@ from joblib import load
 
 # Calculate the resize factor
 resize_factor = 28 / 256
-degree = 2
-poly = PolynomialFeatures(degree)
+#degree = 2
+#poly = PolynomialFeatures(degree)
 
-model = load('./BestLogistic.joblib') 
+model_log = load('./BestLogistic.joblib') 
 
+model_svm = load('./BestSVM2.joblib') 
+model_neural = load('./BestNeural2.joblib')
+
+model = model_neural
 class DrawingApp:
     def __init__(self, master):
         self.master = master
         master.title("Drawing App")
 
         # Create a frame widget with a 1000x1000 size
-        self.frame = tk.Frame(master, width=700, height=700)
-        self.frame.pack()
+        self.frame = tk.Frame(master, bg="#FFD139", width=700, height=700)
+        self.frame.pack()   
+
+        
+        self.label = tk.Label(root, text="Quick Draw!", bg="#FFD139", font=("Arial", 24))
+
+        self.label.place(relx=0.5, rely=0.2, anchor="center")
+        self.my_lambda = lambda model: self.setModel(model)
+
+
+        self.current_model = model_log
+        self.button1 = tk.Button(master, text="Logistic", command=self.my_lambda(model_log))
+        self.button1.pack(side=tk.LEFT)
+
+        self.button2 = tk.Button(master, text="SVM", command=lambda: self.my_lambda(model_svm))
+        self.button2.pack(side=tk.LEFT)
+
+        self.button3 = tk.Button(master, text="Neural", command=lambda: self.my_lambda(model_neural))
+        self.button3.pack(side=tk.LEFT) 
+
+        self.current_model_name = "Logistic"
 
         # Create a canvas widget with a 256x256 size
         self.canvas = tk.Canvas(master, width=256, height=256, bg="white")
@@ -37,10 +60,16 @@ class DrawingApp:
         # Initialize the list of pixel colors to None
         self.pixels = [[0 for j in range(256)] for i in range(256)]
 
-
         self.start_clock()
 
-
+    def setModel(self, model):
+        self.current_model = model
+        if model == model_log:
+            self.current_model_name = "Logistic"
+        elif model == model_svm:
+            self.current_model_name = "SVM"
+        elif model == model_neural:
+            self.current_model_name = "Neural"
     def start_clock(self):
          # Convert the list of pixels into a NumPy array
         pixels_np = np.array(self.pixels)
@@ -51,18 +80,20 @@ class DrawingApp:
         resized_np = zoom(pixels_np, resize_factor, order=1).reshape(1, 784)  # order=1 for bilinear interpolation
         # print(resized_np)
         # print(resized_np.shape)
-        resized_poly = poly.fit_transform(resized_np)
-
-        y_pred = model.predict(resized_poly)
+        #resized_poly = poly.fit_transform(resized_np)
+        model = self.current_model
+        y_pred = model.predict(resized_np)
         animal = "?"
         print(y_pred)
         if(y_pred[0] == 0):
-            animal = "?"
-        else:
+            animal = "giraffe"
+        elif(y_pred[0] == 1):
             animal = "sheep"
+        elif(y_pred[0] == 2):
+            animal = "cat"
 
         
-        self.output.insert("1.0", f"{animal}\n")
+        self.output.insert("1.0", f"{self.current_model_name}:{animal}\n")
 
         self.master.after(1000, self.start_clock)
 
